@@ -1,0 +1,121 @@
+# Gradient Descent — Learning Notes & Implementation
+
+> Part of my ML learning journey — pushing code as I go.
+
+---
+
+## Topics Covered
+
+| # | Topic |
+|---|-------|
+| 1 | Intro |
+| 2 | What is Gradient Descent |
+| 3 | Types of Gradient Descent |
+| 4 | Revision |
+| 5 | Mathematical Formulation of BGD |
+| 6 | Creating our own GDRegressor Class |
+
+---
+
+## What is Gradient Descent?
+
+Gradient Descent is an iterative optimization algorithm used to minimize a loss/cost function by moving in the direction of the **steepest descent** (negative gradient).
+
+At each step, the parameters are updated as:
+
+```
+θ = θ - α * ∇J(θ)
+```
+
+Where:
+- `θ` — model parameters (weights)
+- `α` — learning rate
+- `∇J(θ)` — gradient of the cost function
+
+---
+
+## Types of Gradient Descent
+
+| Type | Description | Pros | Cons |
+|------|-------------|------|------|
+| **Batch GD (BGD)** | Uses the entire dataset per update | Stable convergence | Slow on large datasets |
+| **Stochastic GD (SGD)** | Uses one sample per update | Fast, can escape local minima | Noisy updates |
+| **Mini-Batch GD** | Uses a small batch per update | Best of both worlds | Requires tuning batch size |
+
+---
+
+## Mathematical Formulation of BGD
+
+For a linear regression model with MSE loss:
+
+**Cost Function:**
+```
+J(θ) = (1/2m) * Σ (h(xᵢ) - yᵢ)²
+```
+
+**Gradient:**
+```
+∂J/∂θⱼ = (1/m) * Σ (h(xᵢ) - yᵢ) * xᵢⱼ
+```
+
+**Update Rule:**
+```
+θⱼ = θⱼ - α * (1/m) * Σ (h(xᵢ) - yᵢ) * xᵢⱼ
+```
+
+---
+
+## Custom GDRegressor Class
+
+Implementation of a Gradient Descent Regressor from scratch:
+
+```python
+import numpy as np
+
+class GDRegressor:
+    def __init__(self, learning_rate=0.01, epochs=1000):
+        self.lr = learning_rate
+        self.epochs = epochs
+        self.weights = None
+        self.bias = None
+
+    def fit(self, X, y):
+        m, n = X.shape
+        self.weights = np.zeros(n)
+        self.bias = 0
+
+        for _ in range(self.epochs):
+            y_pred = self.predict(X)
+            error = y_pred - y
+
+            # Compute gradients
+            dw = (1 / m) * X.T @ error
+            db = (1 / m) * np.sum(error)
+
+            # Update parameters
+            self.weights -= self.lr * dw
+            self.bias    -= self.lr * db
+
+    def predict(self, X):
+        return X @ self.weights + self.bias
+```
+
+---
+
+## Key Takeaways
+
+- **Learning rate `α`** is critical — too high → diverges, too low → slow convergence.
+- **BGD** computes the gradient over the full dataset — stable but expensive.
+- Building from scratch cements the math behind what `sklearn` does under the hood.
+
+---
+
+## Resources
+
+- [CS229 - Andrew Ng Lecture Notes](https://cs229.stanford.edu/notes2022fall/main_notes.pdf)
+- [StatQuest - Gradient Descent](https://www.youtube.com/watch?v=sDv4f4s2SB8)
+- [Sklearn SGDRegressor Docs](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html)
+
+---
+
+*Learning in public. Mistakes are part of the process.*
