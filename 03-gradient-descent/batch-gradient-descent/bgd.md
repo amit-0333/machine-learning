@@ -143,49 +143,73 @@ Math → Code, 1:1 mapping:
 import numpy as np
 
 class GDRegressor:
-    def __init__(self, learning_rate=0.01, epochs=1000):
+    
+    def __init__(self, learning_rate=0.01, epochs=100):
+        
+        self.coef_ = None
+        self.intercept_ = None
         self.lr = learning_rate
         self.epochs = epochs
-        self.m = 0.0
-        self.b = 0.0
-        self.loss_history = []
+        
+    def fit(self, X_train, y_train):
+        # init your coefs
+        self.intercept_ = 0
+        self.coef_ = np.ones(X_train.shape[1])
+        
+        for i in range(self.epochs):
+            # update all the coef and the intercept
+            y_hat = np.dot(X_train, self.coef_) + self.intercept_
 
-    def fit(self, X, y):
-        n = len(X)
-
-        for epoch in range(self.epochs):
-            y_hat = self.predict(X)
-
-            # Derived above:
-            # ∂J/∂m = (-2/n) * Σ (y - ŷ) * x
-            # ∂J/∂b = (-2/n) * Σ (y - ŷ)
-            dm = (-2 / n) * np.sum((y - y_hat) * X)
-            db = (-2 / n) * np.sum(y - y_hat)
-
-            self.m -= self.lr * dm
-            self.b -= self.lr * db
-
-            loss = np.mean((y - y_hat) ** 2)
-            self.loss_history.append(loss)
-
-            if epoch % 100 == 0:
-                print(f"Epoch {epoch:4d} | Loss: {loss:.4f} | m: {self.m:.4f} | b: {self.b:.4f}")
-
-    def predict(self, X):
-        return self.m * X + self.b
+            # ∂J/∂b = (-2/n) * Σ (y - ŷ)  →  using np.mean handles the /n
+            intercept_der = -2 * np.mean(y_train - y_hat)
+            self.intercept_ = self.intercept_ - (self.lr * intercept_der)
+            
+            # ∂J/∂w = (-2/n) * Xᵀ (y - ŷ)
+            coef_der = -2 * np.dot((y_train - y_hat), X_train) / X_train.shape[0]
+            self.coef_ = self.coef_ - (self.lr * coef_der)
+        
+        print(self.intercept_, self.coef_)
+    
+    def predict(self, X_test):
+        return np.dot(X_test, self.coef_) + self.intercept_
 ```
+
+### How the code maps to the math
+
+| Code | Math |
+|------|------|
+| `y_hat = np.dot(X_train, self.coef_) + self.intercept_` | `ŷ = Xw + b` |
+| `-2 * np.mean(y_train - y_hat)` | `(-2/n) * Σ (yᵢ - ŷᵢ)` = `∂J/∂b` |
+| `-2 * np.dot((y_train - y_hat), X_train) / X_train.shape[0]` | `(-2/n) * Xᵀ(y - ŷ)` = `∂J/∂w` |
+| `self.intercept_ - (self.lr * intercept_der)` | `b = b - α * ∂J/∂b` |
+| `self.coef_ - (self.lr * coef_der)` | `w = w - α * ∂J/∂w` |
+
+### Key design choices
+
+- `coef_` initialized to `np.ones(X_train.shape[1])` — supports multiple features (not just 1)
+- `intercept_` initialized to `0`
+- `np.mean` on intercept gradient = dividing by `n` automatically
+- `np.dot((y - ŷ), X)` computes the dot product across all samples in one shot — vectorized, no loops
 
 ### Usage
 
 ```python
-X = np.array([1, 2, 3, 4, 5], dtype=float)
-y = np.array([3, 5, 7, 9, 11], dtype=float)   # y = 2x + 1
+from sklearn.datasets import make_regression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
-model = GDRegressor(learning_rate=0.01, epochs=500)
-model.fit(X, y)
+X, y = make_regression(n_samples=100, n_features=1, noise=10, random_state=42)
 
-print(f"Learned: m={model.m:.4f}, b={model.b:.4f}")
-# Expected: m ≈ 2.0, b ≈ 1.0
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test  = scaler.transform(X_test)
+
+model = GDRegressor(learning_rate=0.01, epochs=100)
+model.fit(X_train, y_train)
+
+preds = model.predict(X_test)
 ```
 
 ---
