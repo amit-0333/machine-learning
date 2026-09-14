@@ -76,11 +76,39 @@ When multicollinearity is present:
 - This inflates `Var(β)`, leading to **high standard errors**
 - Coefficients `β₀, β₁, β₂, ...` become **unstable** across different samples
 
-### Practical Indicator
-In a regression summary output, watch for:
-- High **Condition Number** (> 30 is a warning sign)
-- Large **standard errors** relative to coefficients
-- Statistically insignificant predictors despite a high overall R²
+### Example Model
+Consider predicting `lpa` (salary) from `cgpa` and `iq`:
+
+```
+lpa = β₀ + β₁·cgpa + β₂·iq
+```
+
+Across 10 different samples of 100 observations each, the estimated values of `β₀, β₁, β₂` can vary widely — this instability is a direct consequence of multicollinearity inflating `SE(β)`.
+
+### Practical Indicator — OLS Regression Output
+Here's a real example using TV, Radio, and Newspaper ad spend to predict Sales:
+
+```
+OLS Regression Results
+==============================================================
+Dep. Variable:       Sales       R-squared:          0.897
+Model:               OLS         Adj. R-squared:     0.896
+Method:        Least Squares     F-statistic:        570.3
+No. Observations:      200       Condition No.       454
+==============================================================
+             coef    std err       t      P>|t|
+--------------------------------------------------------------
+const       2.9389    0.312     9.422    0.000
+TV          0.0458    0.001    32.809    0.000
+Radio       0.1885    0.009    21.893    0.000
+Newspaper  -0.0010    0.006    -0.177    0.860
+==============================================================
+```
+
+Key observations:
+- **Condition No. = 454** → far above the threshold of 30, a strong signal of multicollinearity
+- **Newspaper p-value = 0.860** → statistically insignificant despite the model's high R² (0.897)
+- **SE values are inflated** → making individual coefficient interpretation unreliable
 
 ---
 
